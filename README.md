@@ -1,4 +1,4 @@
-# Automated Unit Tests with node.js REST backend
+# Automated Unit Tests for node.js
 
 This repository includes basic unit testing logic for automated tests for example REST node backend.
 
@@ -19,7 +19,7 @@ This repository includes basic unit testing logic for automated tests for exampl
 Syntax in tests define the test structure
 
 - `describe("my group title")`
-- `it("my test name that does ")`
+- `it("my test name")`
 
 ```
 const expect = require('chai').expect;
@@ -37,6 +37,8 @@ describe("auth middleware) {
 
 ### Using Sinon to simulate stubs
 
+You can overwrite jwt function to mock the functionality or another (better) option is to use "sinon" to simulate stub functions. You can "restore" function back to normal once you don't need custom functionality anymore.
+
 ```
 it("should yield a userId after decoding the token", function() {
     const req = {
@@ -44,15 +46,17 @@ it("should yield a userId after decoding the token", function() {
         return "Bearer djfkalsdjfaslfjdlas";
       }
     };
-    // you can overwrite jwt function to mock the functionality
-    // other (better) option is to use "sinon" to simulate stub functions
+
+    // mock verify function with sinon
     sinon.stub(jwt, "verify");
     jwt.verify.returns({ userId: "abc" });
+
     authMiddleware(req, {}, () => {});
     expect(req).to.have.property("userId");
     expect(req).to.have.property("userId", "abc");
     expect(jwt.verify.called).to.be.true;
-    // rrestore original function
+
+    // restore original function
     jwt.verify.restore();
   });
 
@@ -60,11 +64,11 @@ it("should yield a userId after decoding the token", function() {
 
 ### Testing controllers
 
-What to test:
-
 - Test if parameters are invalid
 - Mock database operations
 - Use hooks `before()`, `beforeEach`, `after()`, `afterEach()` to avoid unnecessary code duplication
+- **_Hooks_**: prepare tests by initializing mongoose connection before tests are run by using `before()` lifecycle hook so that you have to connect to db only once
+- It is a good idea to setup a dedicated database for testing, do NOT use production database for this
 
 ```
 const expect = require("chai").expect;
@@ -74,9 +78,7 @@ const User = require("../models/user");
 const AuthController = require("../controllers/auth");
 
 describe("Auth Controller", function() {
-  // prepare tests by initializing mongoose connection before tests are run
-  // by using `before()` lifecycle hook so that you have to connect to db only once
-  // It is a good idea to setup a dedicated database for testing, do NOT use production database for this
+
   before(function(done) {
     mongoose
       .connect(process.env.MONGODB_TEST_URI)
